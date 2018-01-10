@@ -143,9 +143,12 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
   public static final String MEMORY_POOL_RATIO    = "parquet.memory.pool.ratio";
   public static final String MIN_MEMORY_ALLOCATION = "parquet.memory.min.chunk.size";
   public static final String MAX_PADDING_BYTES    = "parquet.writer.max-padding";
-  public static final String MIN_ROW_COUNT_FOR_PAGE_SIZE_CHECK = "parquet.page.size.row.check.min";
-  public static final String MAX_ROW_COUNT_FOR_PAGE_SIZE_CHECK = "parquet.page.size.row.check.max";
-  public static final String ESTIMATE_PAGE_SIZE_CHECK = "parquet.page.size.check.estimate";
+  public static final String MIN_ROW_COUNT_FOR_PAGE_SIZE_CHECK = "parquet.page.size_row_check_min";
+  public static final String MAX_ROW_COUNT_FOR_PAGE_SIZE_CHECK = "parquet.page.size_row_check_max";
+  public static final String MIN_ROW_COUNT_FOR_BLOCK_SIZE_CHECK = "parquet.block.size_row_check_min";
+  public static final String MAX_ROW_COUNT_FOR_BLOCK_SIZE_CHECK = "parquet.block.size_row_check_max";
+  public static final String ESTIMATE_PAGE_SIZE_CHECK = "parquet.page.size_check_estimate";
+  public static final String ESTIMATE_BLOCK_SIZE_CHECK = "parquet.block.size_check_estimate";
   public static final String COLUMN_INDEX_TRUNCATE_LENGTH = "parquet.columnindex.truncate.length";
   public static final String STATISTICS_TRUNCATE_LENGTH = "parquet.statistics.truncate.length";
   public static final String BLOOM_FILTER_ENABLED = "parquet.bloom.filter.enabled";
@@ -261,12 +264,27 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
 
   public static int getMinRowCountForPageSizeCheck(Configuration configuration) {
     return configuration.getInt(MIN_ROW_COUNT_FOR_PAGE_SIZE_CHECK,
-        ParquetProperties.DEFAULT_MINIMUM_RECORD_COUNT_FOR_CHECK);
+      ParquetProperties.DEFAULT_MINIMUM_RECORD_COUNT_FOR_PAGE_SIZE_CHECK);
   }
 
   public static int getMaxRowCountForPageSizeCheck(Configuration configuration) {
     return configuration.getInt(MAX_ROW_COUNT_FOR_PAGE_SIZE_CHECK,
-        ParquetProperties.DEFAULT_MAXIMUM_RECORD_COUNT_FOR_CHECK);
+      ParquetProperties.DEFAULT_MAXIMUM_RECORD_COUNT_FOR_PAGE_SIZE_CHECK);
+  }
+
+  public static int getMinRowCountForBlockSizeCheck(Configuration configuration) {
+    return configuration.getInt(MIN_ROW_COUNT_FOR_BLOCK_SIZE_CHECK,
+        ParquetProperties.DEFAULT_MINIMUM_RECORD_COUNT_FOR_BLOCK_SIZE_CHECK);
+  }
+
+  public static int getMaxRowCountForBlockSizeCheck(Configuration configuration) {
+    return configuration.getInt(MAX_ROW_COUNT_FOR_BLOCK_SIZE_CHECK,
+        ParquetProperties.DEFAULT_MAXIMUM_RECORD_COUNT_FOR_BLOCK_SIZE_CHECK);
+  }
+
+  public static boolean getEstimateBlockSizeCheck(Configuration configuration) {
+    return configuration.getBoolean(ESTIMATE_BLOCK_SIZE_CHECK,
+      ParquetProperties.DEFAULT_ESTIMATE_ROW_COUNT_FOR_BLOCK_SIZE_CHECK);
   }
 
   public static boolean getEstimatePageSizeCheck(Configuration configuration) {
@@ -445,8 +463,11 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
         .withDictionaryEncoding(getEnableDictionary(conf))
         .withWriterVersion(getWriterVersion(conf))
         .estimateRowCountForPageSizeCheck(getEstimatePageSizeCheck(conf))
+        .estimateRowCountForBlockSizeCheck(getEstimateBlockSizeCheck(conf))
         .withMinRowCountForPageSizeCheck(getMinRowCountForPageSizeCheck(conf))
         .withMaxRowCountForPageSizeCheck(getMaxRowCountForPageSizeCheck(conf))
+        .withMinRowCountForBlockSizeCheck(getMinRowCountForBlockSizeCheck(conf))
+        .withMaxRowCountForBlockSizeCheck(getMaxRowCountForBlockSizeCheck(conf))
         .withColumnIndexTruncateLength(getColumnIndexTruncateLength(conf))
         .withStatisticsTruncateLength(getStatisticsTruncateLength(conf))
         .withMaxBloomFilterBytes(getBloomFilterMaxBytes(conf))
@@ -474,9 +495,9 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
     }
 
     WriteContext fileWriteContext = writeSupport.init(conf);
-    
+
     FileEncryptionProperties encryptionProperties = createEncryptionProperties(conf, file, fileWriteContext);
-    
+
     ParquetFileWriter w = new ParquetFileWriter(HadoopOutputFile.fromPath(file, conf),
         fileWriteContext.getSchema(), mode, blockSize, maxPaddingSize, props.getColumnIndexTruncateLength(),
         props.getStatisticsTruncateLength(), props.getPageWriteChecksumEnabled(), encryptionProperties);
@@ -544,8 +565,8 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
   public synchronized static MemoryManager getMemoryManager() {
     return memoryManager;
   }
-  
-  private static FileEncryptionProperties createEncryptionProperties(Configuration fileHadoopConfig, Path tempFilePath, 
+
+  private static FileEncryptionProperties createEncryptionProperties(Configuration fileHadoopConfig, Path tempFilePath,
       WriteContext fileWriteContext) {
     EncryptionPropertiesFactory cryptoFactory = EncryptionPropertiesFactory.loadFactory(fileHadoopConfig);
     if (null == cryptoFactory) {
