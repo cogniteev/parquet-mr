@@ -48,7 +48,7 @@ class InternalParquetRecordWriter<T> {
   private final WriteSupport<T> writeSupport;
   private final MessageType schema;
   private final Map<String, String> extraMetaData;
-  private final boolean estimateNextBlockSizeCheck;
+  private final boolean estimateSizeCheckRows;
   private long rowGroupSizeThreshold;
   private long nextRowGroupSize;
   private final BytesCompressor compressor;
@@ -65,8 +65,8 @@ class InternalParquetRecordWriter<T> {
   private ColumnChunkPageWriteStore pageStore;
   private BloomFilterWriteStore bloomFilterWriteStore;
   private RecordConsumer recordConsumer;
-  private int minRecordCountForBlockSizeCheck;
-  private int maxRecordCountForBlockSizeCheck;
+  private int sizeCheckMinRows;
+  private int sizeCheckMaxRows;
 
   private InternalFileEncryptor fileEncryptor;
   private int rowGroupOrdinal;
@@ -99,9 +99,9 @@ class InternalParquetRecordWriter<T> {
     this.props = props;
     this.fileEncryptor = parquetFileWriter.getEncryptor();
     this.rowGroupOrdinal = 0;
-    this.minRecordCountForBlockSizeCheck = props.getMinRowCountForPageSizeCheck();
-    this.maxRecordCountForBlockSizeCheck = props.getMaxRowCountForPageSizeCheck();
-    this.estimateNextBlockSizeCheck = props.estimateNextBlockSizeCheck();
+    this.sizeCheckMinRows = props.getMinRowCountForRowGroupSizeCheck();
+    this.sizeCheckMaxRows = props.getMaxRowCountForRowGroupSizeCheck();
+    this.estimateSizeCheckRows = props.estimateNextRowGroupSizeCheck();
     initStore();
   }
 
@@ -120,8 +120,6 @@ class InternalParquetRecordWriter<T> {
     MessageColumnIO columnIO = new ColumnIOFactory(validating).getColumnIO(schema);
     this.recordConsumer = columnIO.getRecordWriter(columnStore);
     writeSupport.prepareForWrite(recordConsumer);
-    System.out.println(String.format("Created ParquetWriter with [%d, %d] for block size checks. Estimation(%s). BlockSize(%d)",
-      minRecordCountForBlockSizeCheck, maxRecordCountForBlockSizeCheck, estimateNextBlockSizeCheck, rowGroupSizeThreshold));
   }
 
   public void close() throws IOException, InterruptedException {
@@ -162,22 +160,21 @@ class InternalParquetRecordWriter<T> {
         LOG.debug("mem size {} > {}: flushing {} records to disk.", memSize, nextRowGroupSize, recordCount);
         flushRowGroupToStore();
         initStore();
-        if (estimateNextBlockSizeCheck) {
-          recordCountForNextMemCheck = min(max(minRecordCountForBlockSizeCheck, recordCount / 2),
-            maxRecordCountForBlockSizeCheck);
+        if (estimateSizeCheckRows) {
+          recordCountForNextMemCheck = min(max(sizeCheckMinRows, recordCount / 2), sizeCheckMaxRows);
         } else {
-          recordCountForNextMemCheck = minRecordCountForBlockSizeCheck;
+          recordCountForNextMemCheck = sizeCheckMinRows;
         }
         this.lastRowGroupEndPos = parquetFileWriter.getPos();
       } else {
-        if (estimateNextBlockSizeCheck) {
+        if (estimateSizeCheckRows) {
           recordCountForNextMemCheck = min(
-            max(minRecordCountForBlockSizeCheck, (recordCount + (long) (nextRowGroupSize / ((float) recordSize))) / 2),
+            max(sizeCheckMinRows, (recordCount + (long) (nextRowGroupSize / ((float) recordSize))) / 2),
             // will check halfway
-            recordCount + maxRecordCountForBlockSizeCheck // will not look more than max records ahead
+            recordCount + sizeCheckMaxRows // will not look more than max records ahead
           );
         } else {
-          recordCountForNextMemCheck += minRecordCountForBlockSizeCheck;
+          recordCountForNextMemCheck += sizeCheckMinRows;
         }
         LOG.debug("Checked mem at {} will check again at: {}", recordCount, recordCountForNextMemCheck);
       }
