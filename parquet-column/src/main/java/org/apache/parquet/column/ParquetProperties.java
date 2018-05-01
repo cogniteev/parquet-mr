@@ -45,11 +45,11 @@ public class ParquetProperties {
   public static final boolean DEFAULT_IS_DICTIONARY_ENABLED = true;
   public static final WriterVersion DEFAULT_WRITER_VERSION = WriterVersion.PARQUET_1_0;
   public static final boolean DEFAULT_ESTIMATE_ROW_COUNT_FOR_PAGE_SIZE_CHECK = true;
-  public static final boolean DEFAULT_ESTIMATE_ROW_COUNT_FOR_BLOCK_SIZE_CHECK = true;
+  public static final boolean DEFAULT_ESTIMATE_ROW_COUNT_FOR_ROW_GROUP_SIZE_CHECK = true;
   public static final int DEFAULT_MINIMUM_RECORD_COUNT_FOR_PAGE_SIZE_CHECK = 100;
   public static final int DEFAULT_MAXIMUM_RECORD_COUNT_FOR_PAGE_SIZE_CHECK = 10000;
-  public static final int DEFAULT_MINIMUM_RECORD_COUNT_FOR_BLOCK_SIZE_CHECK = 100;
-  public static final int DEFAULT_MAXIMUM_RECORD_COUNT_FOR_BLOCK_SIZE_CHECK = 10000;
+  public static final int DEFAULT_MINIMUM_RECORD_COUNT_FOR_ROW_GROUP_SIZE_CHECK = 100;
+  public static final int DEFAULT_MAXIMUM_RECORD_COUNT_FOR_ROW_GROUP_SIZE_CHECK = 10000;
   public static final int DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH = 64;
   public static final int DEFAULT_STATISTICS_TRUNCATE_LENGTH = Integer.MAX_VALUE;
   public static final int DEFAULT_PAGE_ROW_COUNT_LIMIT = 20_000;
@@ -88,10 +88,10 @@ public class ParquetProperties {
   private final boolean enableDictionary;
   private final int minRowCountForPageSizeCheck;
   private final int maxRowCountForPageSizeCheck;
-  private final int minRowCountForBlockSizeCheck;
-  private final int maxRowCountForBlockSizeCheck;
+  private final int minRowCountForRowGroupSizeCheck;
+  private final int maxRowCountForRowGroupSizeCheck;
   private final boolean estimateNextPageSizeCheck;
-  private final boolean estimateNextBlockSizeCheck;
+  private final boolean estimateNextRowGroupSizeCheck;
   private final ByteBufferAllocator allocator;
   private final ValuesWriterFactory valuesWriterFactory;
   private final int columnIndexTruncateLength;
@@ -100,7 +100,7 @@ public class ParquetProperties {
   private final boolean pageWriteChecksumEnabled;
 
   private ParquetProperties(WriterVersion writerVersion, int pageSize, int dictPageSize, boolean enableDict, int minRowCountForPageSizeCheck,
-                            int maxRowCountForPageSizeCheck, int minRowCountForBlockSizeCheck, int maxRowCountForBlockSizeCheck, boolean estimateNextPageSizeCheck, boolean estimateNextBlockSizeCheck, ByteBufferAllocator allocator,
+                            int maxRowCountForPageSizeCheck, int minRowCountForRowGroupSizeCheck, int maxRowCountForRowGroupSizeCheck, boolean estimateNextPageSizeCheck, boolean estimateNextRowGroupSizeCheck, ByteBufferAllocator allocator,
                             ValuesWriterFactory writerFactory, int columnIndexMinMaxTruncateLength, int pageRowCountLimit,
                             boolean pageWriteChecksumEnabled, int statisticsTruncateLength) {
     this.pageSizeThreshold = pageSize;
@@ -111,10 +111,10 @@ public class ParquetProperties {
     this.enableDictionary = enableDict;
     this.minRowCountForPageSizeCheck = minRowCountForPageSizeCheck;
     this.maxRowCountForPageSizeCheck = maxRowCountForPageSizeCheck;
-    this.minRowCountForBlockSizeCheck = minRowCountForBlockSizeCheck;
-    this.maxRowCountForBlockSizeCheck = maxRowCountForBlockSizeCheck;
+    this.minRowCountForRowGroupSizeCheck = minRowCountForRowGroupSizeCheck;
+    this.maxRowCountForRowGroupSizeCheck = maxRowCountForRowGroupSizeCheck;
     this.estimateNextPageSizeCheck = estimateNextPageSizeCheck;
-    this.estimateNextBlockSizeCheck = estimateNextBlockSizeCheck;
+    this.estimateNextRowGroupSizeCheck = estimateNextRowGroupSizeCheck;
     this.allocator = allocator;
 
     this.valuesWriterFactory = writerFactory;
@@ -202,12 +202,12 @@ public class ParquetProperties {
     return maxRowCountForPageSizeCheck;
   }
 
-  public int getMinRowCountForBlockSizeCheck() {
-    return minRowCountForBlockSizeCheck;
+  public int getMinRowCountForRowGroupSizeCheck() {
+    return minRowCountForRowGroupSizeCheck;
   }
 
-  public int getMaxRowCountForBlockSizeCheck() {
-    return maxRowCountForBlockSizeCheck;
+  public int getMaxRowCountForRowGroupSizeCheck() {
+    return maxRowCountForRowGroupSizeCheck;
   }
 
   public ValuesWriterFactory getValuesWriterFactory() {
@@ -226,8 +226,8 @@ public class ParquetProperties {
     return estimateNextPageSizeCheck;
   }
 
-  public boolean estimateNextBlockSizeCheck() {
-    return estimateNextBlockSizeCheck;
+  public boolean estimateNextRowGroupSizeCheck() {
+    return estimateNextRowGroupSizeCheck;
   }
 
   public int getPageRowCountLimit() {
@@ -254,9 +254,9 @@ public class ParquetProperties {
     private int minRowCountForPageSizeCheck = DEFAULT_MINIMUM_RECORD_COUNT_FOR_PAGE_SIZE_CHECK;
     private int maxRowCountForPageSizeCheck = DEFAULT_MAXIMUM_RECORD_COUNT_FOR_PAGE_SIZE_CHECK;
     private boolean estimateNextPageSizeCheck = DEFAULT_ESTIMATE_ROW_COUNT_FOR_PAGE_SIZE_CHECK;
-    private int minRowCountForBlockSizeCheck = DEFAULT_MINIMUM_RECORD_COUNT_FOR_BLOCK_SIZE_CHECK;
-    private int maxRowCountForBlockSizeCheck = DEFAULT_MAXIMUM_RECORD_COUNT_FOR_BLOCK_SIZE_CHECK;
-    private boolean estimateNextBlockSizeCheck = DEFAULT_ESTIMATE_ROW_COUNT_FOR_BLOCK_SIZE_CHECK;
+    private int minRowCountForRowGroupSizeCheck = DEFAULT_MINIMUM_RECORD_COUNT_FOR_ROW_GROUP_SIZE_CHECK;
+    private int maxRowCountForRowGroupSizeCheck = DEFAULT_MAXIMUM_RECORD_COUNT_FOR_ROW_GROUP_SIZE_CHECK;
+    private boolean estimateNextRowGroupSizeCheck = DEFAULT_ESTIMATE_ROW_COUNT_FOR_ROW_GROUP_SIZE_CHECK;
     private ByteBufferAllocator allocator = new HeapByteBufferAllocator();
     private ValuesWriterFactory valuesWriterFactory = DEFAULT_VALUES_WRITER_FACTORY;
     private int columnIndexTruncateLength = DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH;
@@ -275,9 +275,9 @@ public class ParquetProperties {
       this.minRowCountForPageSizeCheck = toCopy.minRowCountForPageSizeCheck;
       this.maxRowCountForPageSizeCheck = toCopy.maxRowCountForPageSizeCheck;
       this.estimateNextPageSizeCheck = toCopy.estimateNextPageSizeCheck;
-      this.minRowCountForBlockSizeCheck = toCopy.minRowCountForBlockSizeCheck;
-      this.maxRowCountForBlockSizeCheck = toCopy.maxRowCountForBlockSizeCheck;
-      this.estimateNextBlockSizeCheck = toCopy.estimateNextBlockSizeCheck;
+      this.minRowCountForRowGroupSizeCheck = toCopy.minRowCountForRowGroupSizeCheck;
+      this.maxRowCountForRowGroupSizeCheck = toCopy.maxRowCountForRowGroupSizeCheck;
+      this.estimateNextRowGroupSizeCheck = toCopy.estimateNextRowGroupSizeCheck;
       this.valuesWriterFactory = toCopy.valuesWriterFactory;
       this.allocator = toCopy.allocator;
       this.pageRowCountLimit = toCopy.pageRowCountLimit;
@@ -346,17 +346,17 @@ public class ParquetProperties {
       return this;
     }
 
-    public Builder withMinRowCountForBlockSizeCheck(int min) {
+    public Builder withMinRowCountForRowGroupSizeCheck(int min) {
       Preconditions.checkArgument(min > 0,
           "Invalid row count for block size check (negative): %s", min);
-      this.minRowCountForBlockSizeCheck = min;
+      this.minRowCountForRowGroupSizeCheck = min;
       return this;
     }
 
-    public Builder withMaxRowCountForBlockSizeCheck(int max) {
+    public Builder withMaxRowCountForRowGroupSizeCheck(int max) {
       Preconditions.checkArgument(max > 0,
           "Invalid row count for block size check (negative): %s", max);
-      this.maxRowCountForBlockSizeCheck = max;
+      this.maxRowCountForRowGroupSizeCheck = max;
       return this;
     }
 
@@ -366,8 +366,8 @@ public class ParquetProperties {
       return this;
     }
 
-    public Builder estimateRowCountForBlockSizeCheck(boolean estimateBlockSizeCheck) {
-      this.estimateNextBlockSizeCheck = estimateBlockSizeCheck;
+    public Builder estimateRowCountForRowGroupSizeCheck(boolean estimateRowGroupSizeCheck) {
+      this.estimateNextRowGroupSizeCheck = estimateRowGroupSizeCheck;
       return this;
     }
 
@@ -410,8 +410,8 @@ public class ParquetProperties {
       ParquetProperties properties =
         new ParquetProperties(writerVersion, pageSize, dictPageSize,
           enableDict, minRowCountForPageSizeCheck, maxRowCountForPageSizeCheck,
-          minRowCountForBlockSizeCheck, maxRowCountForBlockSizeCheck,
-          estimateNextPageSizeCheck, estimateNextBlockSizeCheck,
+            minRowCountForRowGroupSizeCheck, maxRowCountForRowGroupSizeCheck,
+          estimateNextPageSizeCheck, estimateNextRowGroupSizeCheck,
           allocator, valuesWriterFactory, columnIndexTruncateLength,
           pageRowCountLimit, pageWriteChecksumEnabled, statisticsTruncateLength);
       // we pass a constructed but uninitialized factory to ParquetProperties above as currently
