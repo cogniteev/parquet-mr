@@ -214,7 +214,7 @@ abstract class ColumnWriteStoreBase implements ColumnWriteStore {
       minRecordToWait = props.getMinRowCountForPageSizeCheck();
     }
 
-    if (props.estimateNextSizeCheck()) {
+    if (props.estimateNextPageSizeCheck()) {
       // will check again halfway if between min and max
       rowCountForNextSizeCheck = rowCount +
           min(
