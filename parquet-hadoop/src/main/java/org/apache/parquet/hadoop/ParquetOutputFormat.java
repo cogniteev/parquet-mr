@@ -146,7 +146,10 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
   public static final String MAX_PADDING_BYTES    = "parquet.writer.max-padding";
   public static final String MIN_ROW_COUNT_FOR_PAGE_SIZE_CHECK = "parquet.page.size.row.check.min";
   public static final String MAX_ROW_COUNT_FOR_PAGE_SIZE_CHECK = "parquet.page.size.row.check.max";
+  public static final String MIN_ROW_COUNT_FOR_ROW_GROUP_SIZE_CHECK = "parquet.row-group.size.row.check.min";
+  public static final String MAX_ROW_COUNT_FOR_ROW_GROUP_SIZE_CHECK = "parquet.row-group.size.row.check.max";
   public static final String ESTIMATE_PAGE_SIZE_CHECK = "parquet.page.size.check.estimate";
+  public static final String ESTIMATE_ROW_GROUP_SIZE_CHECK = "parquet.row-group.size.check.estimate";
   public static final String COLUMN_INDEX_TRUNCATE_LENGTH = "parquet.columnindex.truncate.length";
   public static final String STATISTICS_TRUNCATE_LENGTH = "parquet.statistics.truncate.length";
   public static final String STATISTICS_ENABLED = "parquet.statistics.enabled";
@@ -268,12 +271,27 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
 
   public static int getMinRowCountForPageSizeCheck(Configuration configuration) {
     return configuration.getInt(MIN_ROW_COUNT_FOR_PAGE_SIZE_CHECK,
-        ParquetProperties.DEFAULT_MINIMUM_RECORD_COUNT_FOR_CHECK);
+      ParquetProperties.DEFAULT_MINIMUM_RECORD_COUNT_FOR_PAGE_SIZE_CHECK);
   }
 
   public static int getMaxRowCountForPageSizeCheck(Configuration configuration) {
     return configuration.getInt(MAX_ROW_COUNT_FOR_PAGE_SIZE_CHECK,
-        ParquetProperties.DEFAULT_MAXIMUM_RECORD_COUNT_FOR_CHECK);
+      ParquetProperties.DEFAULT_MAXIMUM_RECORD_COUNT_FOR_PAGE_SIZE_CHECK);
+  }
+
+  public static int getMinRowCountForRowGroupSizeCheck(Configuration configuration) {
+    return configuration.getInt(MIN_ROW_COUNT_FOR_ROW_GROUP_SIZE_CHECK,
+        ParquetProperties.DEFAULT_MINIMUM_RECORD_COUNT_FOR_ROW_GROUP_SIZE_CHECK);
+  }
+
+  public static int getMaxRowCountForRowGroupSizeCheck(Configuration configuration) {
+    return configuration.getInt(MAX_ROW_COUNT_FOR_ROW_GROUP_SIZE_CHECK,
+        ParquetProperties.DEFAULT_MAXIMUM_RECORD_COUNT_FOR_ROW_GROUP_SIZE_CHECK);
+  }
+
+  public static boolean getEstimateBlockSizeCheck(Configuration configuration) {
+    return configuration.getBoolean(ESTIMATE_ROW_GROUP_SIZE_CHECK,
+      ParquetProperties.DEFAULT_ESTIMATE_ROW_COUNT_FOR_ROW_GROUP_SIZE_CHECK);
   }
 
   public static boolean getEstimatePageSizeCheck(Configuration configuration) {
@@ -452,8 +470,11 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
         .withDictionaryEncoding(getEnableDictionary(conf))
         .withWriterVersion(getWriterVersion(conf))
         .estimateRowCountForPageSizeCheck(getEstimatePageSizeCheck(conf))
+        .estimateRowCountForRowGroupSizeCheck(getEstimateBlockSizeCheck(conf))
         .withMinRowCountForPageSizeCheck(getMinRowCountForPageSizeCheck(conf))
         .withMaxRowCountForPageSizeCheck(getMaxRowCountForPageSizeCheck(conf))
+        .withMinRowCountForRowGroupSizeCheck(getMinRowCountForRowGroupSizeCheck(conf))
+        .withMaxRowCountForRowGroupSizeCheck(getMaxRowCountForRowGroupSizeCheck(conf))
         .withColumnIndexTruncateLength(getColumnIndexTruncateLength(conf))
         .withStatisticsTruncateLength(getStatisticsTruncateLength(conf))
         .withMaxBloomFilterBytes(getBloomFilterMaxBytes(conf))
