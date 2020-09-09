@@ -121,11 +121,10 @@ public class ParquetProperties {
     this.dictionaryEnabled = builder.enableDict.build();
     this.minRowCountForPageSizeCheck = builder.minRowCountForPageSizeCheck;
     this.maxRowCountForPageSizeCheck = builder.maxRowCountForPageSizeCheck;
-    this.estimateNextSizeCheck = builder.estimateNextSizeCheck;
-    this.minRowCountForBlockSizeCheck = builder.minRowCountForBlockSizeCheck;
-    this.maxRowCountForBlockSizeCheck = builder.maxRowCountForBlockSizeCheck;
+    this.minRowCountForRowGroupSizeCheck = builder.minRowCountForRowGroupSizeCheck;
+    this.maxRowCountForRowGroupSizeCheck = builder.maxRowCountForRowGroupSizeCheck;
     this.estimateNextPageSizeCheck = builder.estimateNextPageSizeCheck;
-    this.estimateNextBlockSizeCheck = builder.estimateNextBlockSizeCheck;
+    this.estimateNextRowGroupSizeCheck = builder.estimateNextRowGroupSizeCheck;
     this.allocator = builder.allocator;
 
     this.valuesWriterFactory = builder.valuesWriterFactory;
@@ -302,9 +301,12 @@ public class ParquetProperties {
         + "Parquet dictionary page size to " + getDictionaryPageSizeThreshold() + '\n'
         + "Dictionary is " + dictionaryEnabled + '\n'
         + "Writer version is: " + getWriterVersion() + '\n'
-        + "Page size checking is: " + (estimateNextSizeCheck() ? "estimated" : "constant") + '\n'
+        + "Page size checking is: " + (estimateNextPageSizeCheck() ? "estimated" : "constant") + '\n'
         + "Min row count for page size check is: " + getMinRowCountForPageSizeCheck() + '\n'
         + "Max row count for page size check is: " + getMaxRowCountForPageSizeCheck() + '\n'
+        + "Row group size checking is: " + (estimateNextRowGroupSizeCheck() ? "estimated" : "constant") + '\n'
+        + "Min row count for row group size check is: " + getMinRowCountForRowGroupSizeCheck() + '\n'
+        + "Max row count for row group size check is: " + getMaxRowCountForRowGroupSizeCheck() + '\n'
         + "Truncate length for column indexes is: " + getColumnIndexTruncateLength() + '\n'
         + "Truncate length for statistics min/max  is: " + getStatisticsTruncateLength() + '\n'
         + "Bloom filter enabled: " + bloomFilterEnabled + '\n'
