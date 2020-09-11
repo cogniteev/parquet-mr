@@ -194,7 +194,7 @@ public class ParquetWriter<T> implements Closeable {
         compressionCodecName, blockSize, pageSize, dictionaryPageSize,
         enableDictionary, validating, writerVersion, conf);
   }
-  
+
   /**
    * Create a new ParquetWriter.
    *
@@ -281,7 +281,7 @@ public class ParquetWriter<T> implements Closeable {
 
     ParquetFileWriter fileWriter = new ParquetFileWriter(
       file, schema, mode, rowGroupSize, maxPaddingSize,
-      encodingProps.getColumnIndexTruncateLength(), encodingProps.getStatisticsTruncateLength(),
+      encodingProps, encodingProps.getColumnIndexTruncateLength(), encodingProps.getStatisticsTruncateLength(),
       encodingProps.getPageWriteChecksumEnabled(), encryptionProperties);
     fileWriter.start();
 

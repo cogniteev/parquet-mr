@@ -57,6 +57,7 @@ public class ParquetProperties {
   public static final int DEFAULT_PAGE_ROW_COUNT_LIMIT = 20_000;
   public static final int DEFAULT_MAX_BLOOM_FILTER_BYTES = 1024 * 1024;
   public static final boolean DEFAULT_BLOOM_FILTER_ENABLED = false;
+  public static final boolean DEFAULT_STATISTICS_ENABLED = true;
 
   public static final boolean DEFAULT_PAGE_WRITE_CHECKSUM_ENABLED = true;
 
@@ -90,6 +91,7 @@ public class ParquetProperties {
   private final int dictionaryPageSizeThreshold;
   private final WriterVersion writerVersion;
   private final ColumnProperty<Boolean> dictionaryEnabled;
+  private final ColumnProperty<Boolean> statisticsEnabled;
   private final int minRowCountForPageSizeCheck;
   private final int maxRowCountForPageSizeCheck;
   private final boolean estimateNextSizeCheck;
@@ -113,6 +115,7 @@ public class ParquetProperties {
     this.dictionaryPageSizeThreshold = builder.dictPageSize;
     this.writerVersion = builder.writerVersion;
     this.dictionaryEnabled = builder.enableDict.build();
+    this.statisticsEnabled = builder.enableStatistics.build();
     this.minRowCountForPageSizeCheck = builder.minRowCountForPageSizeCheck;
     this.maxRowCountForPageSizeCheck = builder.maxRowCountForPageSizeCheck;
     this.estimateNextSizeCheck = builder.estimateNextSizeCheck;
@@ -262,6 +265,10 @@ public class ParquetProperties {
     return bloomFilterEnabled.getValue(column);
   }
 
+  public boolean isStatisticsEnabled(ColumnDescriptor column) {
+    return statisticsEnabled.getValue(column);
+  }
+
   public int getMaxBloomFilterBytes() {
     return maxBloomFilterBytes;
   }
@@ -296,6 +303,7 @@ public class ParquetProperties {
     private int pageSize = DEFAULT_PAGE_SIZE;
     private int dictPageSize = DEFAULT_DICTIONARY_PAGE_SIZE;
     private final ColumnProperty.Builder<Boolean> enableDict;
+    private final ColumnProperty.Builder<Boolean> enableStatistics;
     private WriterVersion writerVersion = DEFAULT_WRITER_VERSION;
     private int minRowCountForPageSizeCheck = DEFAULT_MINIMUM_RECORD_COUNT_FOR_CHECK;
     private int maxRowCountForPageSizeCheck = DEFAULT_MAXIMUM_RECORD_COUNT_FOR_CHECK;
@@ -313,6 +321,7 @@ public class ParquetProperties {
 
     private Builder() {
       enableDict = ColumnProperty.<Boolean>builder().withDefaultValue(DEFAULT_IS_DICTIONARY_ENABLED);
+      enableStatistics = ColumnProperty.<Boolean>builder().withDefaultValue(DEFAULT_STATISTICS_ENABLED);
       bloomFilterEnabled = ColumnProperty.<Boolean>builder().withDefaultValue(DEFAULT_BLOOM_FILTER_ENABLED);
       bloomFilterNDVs = ColumnProperty.<Long>builder().withDefaultValue(null);
     }
@@ -320,6 +329,7 @@ public class ParquetProperties {
     private Builder(ParquetProperties toCopy) {
       this.pageSize = toCopy.pageSizeThreshold;
       this.enableDict = ColumnProperty.<Boolean>builder(toCopy.dictionaryEnabled);
+      this.enableStatistics = ColumnProperty.<Boolean>builder(toCopy.statisticsEnabled);
       this.dictPageSize = toCopy.dictionaryPageSizeThreshold;
       this.writerVersion = toCopy.writerVersion;
       this.minRowCountForPageSizeCheck = toCopy.minRowCountForPageSizeCheck;
@@ -368,6 +378,19 @@ public class ParquetProperties {
      */
     public Builder withDictionaryEncoding(String columnPath, boolean enableDictionary) {
       this.enableDict.withValue(columnPath, enableDictionary);
+      return this;
+    }
+
+    /**
+     * Enable or disable statistics for the specified column.
+     *
+     * @param columnPath the path of the column (dot-string)
+     * @param enabled    whether bloom filter shall be enabled
+     *
+     * @return this builder for method chaining
+     */
+    public Builder withStatisticsEnabled(String columnPath, boolean enabled) {
+      this.enableStatistics.withValue(columnPath, enabled);
       return this;
     }
 

@@ -19,6 +19,7 @@
 package org.apache.parquet.hadoop;
 
 import static org.apache.parquet.column.ParquetProperties.DEFAULT_BLOOM_FILTER_ENABLED;
+import static org.apache.parquet.column.ParquetProperties.DEFAULT_STATISTICS_ENABLED;
 import static org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE;
 import static org.apache.parquet.hadoop.util.ContextUtil.getConfiguration;
 
@@ -148,6 +149,7 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
   public static final String ESTIMATE_PAGE_SIZE_CHECK = "parquet.page.size.check.estimate";
   public static final String COLUMN_INDEX_TRUNCATE_LENGTH = "parquet.columnindex.truncate.length";
   public static final String STATISTICS_TRUNCATE_LENGTH = "parquet.statistics.truncate.length";
+  public static final String STATISTICS_ENABLED = "parquet.statistics.enabled";
   public static final String BLOOM_FILTER_ENABLED = "parquet.bloom.filter.enabled";
   public static final String BLOOM_FILTER_EXPECTED_NDV = "parquet.bloom.filter.expected.ndv";
   public static final String BLOOM_FILTER_MAX_BYTES = "parquet.bloom.filter.max.bytes";
@@ -226,6 +228,11 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
   public static boolean getBloomFilterEnabled(Configuration conf) {
     return conf.getBoolean(BLOOM_FILTER_ENABLED, DEFAULT_BLOOM_FILTER_ENABLED);
   }
+
+  public static boolean getStatisticsEnabled(Configuration conf) {
+    return conf.getBoolean(STATISTICS_ENABLED, DEFAULT_STATISTICS_ENABLED);
+  }
+
   public static int getBlockSize(JobContext jobContext) {
     return getBlockSize(getConfiguration(jobContext));
   }
@@ -454,6 +461,7 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
         .withPageRowCountLimit(getPageRowCountLimit(conf))
         .withPageWriteChecksumEnabled(getPageWriteChecksumEnabled(conf));
     new ColumnConfigParser()
+        .withColumnConfig(STATISTICS_ENABLED, key -> conf.getBoolean(key, false), propsBuilder::withStatisticsEnabled)
         .withColumnConfig(ENABLE_DICTIONARY, key -> conf.getBoolean(key, false), propsBuilder::withDictionaryEncoding)
         .withColumnConfig(BLOOM_FILTER_ENABLED, key -> conf.getBoolean(key, false),
             propsBuilder::withBloomFilterEnabled)
@@ -474,11 +482,11 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
     }
 
     WriteContext fileWriteContext = writeSupport.init(conf);
-    
+
     FileEncryptionProperties encryptionProperties = createEncryptionProperties(conf, file, fileWriteContext);
-    
+
     ParquetFileWriter w = new ParquetFileWriter(HadoopOutputFile.fromPath(file, conf),
-        fileWriteContext.getSchema(), mode, blockSize, maxPaddingSize, props.getColumnIndexTruncateLength(),
+        fileWriteContext.getSchema(), mode, blockSize, maxPaddingSize, props, props.getColumnIndexTruncateLength(),
         props.getStatisticsTruncateLength(), props.getPageWriteChecksumEnabled(), encryptionProperties);
     w.start();
 
@@ -544,8 +552,8 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
   public synchronized static MemoryManager getMemoryManager() {
     return memoryManager;
   }
-  
-  private static FileEncryptionProperties createEncryptionProperties(Configuration fileHadoopConfig, Path tempFilePath, 
+
+  private static FileEncryptionProperties createEncryptionProperties(Configuration fileHadoopConfig, Path tempFilePath,
       WriteContext fileWriteContext) {
     EncryptionPropertiesFactory cryptoFactory = EncryptionPropertiesFactory.loadFactory(fileHadoopConfig);
     if (null == cryptoFactory) {
