@@ -57,6 +57,7 @@ abstract class ColumnWriterBase implements ColumnWriter {
   private long rowsWrittenSoFar = 0;
   private int pageRowCount;
 
+  private final boolean statisticsEnabled;
   private final BloomFilterWriter bloomFilterWriter;
   private final BloomFilter bloomFilter;
 
@@ -75,6 +76,8 @@ abstract class ColumnWriterBase implements ColumnWriter {
   ) {
     this.path = path;
     this.pageWriter = pageWriter;
+    this.statisticsEnabled = props.isStatisticsEnabled(path);
+
     resetStatistics();
 
     this.repetitionLevelColumn = createRLWriter(props, path);
@@ -107,7 +110,9 @@ abstract class ColumnWriterBase implements ColumnWriter {
   }
 
   private void resetStatistics() {
-    this.statistics = Statistics.createStats(path.getPrimitiveType());
+    this.statistics = statisticsEnabled
+      ? Statistics.createStats(path.getPrimitiveType())
+      : Statistics.createNoOpStats(path.getPrimitiveType());
   }
 
   private void definitionLevel(int definitionLevel) {

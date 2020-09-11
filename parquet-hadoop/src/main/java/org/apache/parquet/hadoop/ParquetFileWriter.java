@@ -160,6 +160,7 @@ public class ParquetFileWriter {
   private CompressionCodecName currentChunkCodec; // set in startColumn
   private ColumnPath currentChunkPath;            // set in startColumn
   private PrimitiveType currentChunkType;         // set in startColumn
+  private boolean currentKeepStatistics;          // set in startColumn
   private long currentChunkValueCount;            // set in startColumn
   private long currentChunkFirstDataPage;         // set in startColumn (out.pos())
   private long currentChunkDictionaryPageOffset;  // set in writeDictionaryPage
@@ -438,13 +439,14 @@ public class ParquetFileWriter {
     currentChunkType = descriptor.getPrimitiveType();
     currentChunkCodec = compressionCodecName;
     currentChunkValueCount = valueCount;
+    currentKeepStatistics = props == null || props.isStatisticsEnabled(descriptor);
     currentChunkFirstDataPage = out.getPos();
     compressedLength = 0;
     uncompressedLength = 0;
     // The statistics will be copied from the first one added at writeDataPage(s) so we have the correct typed one
     currentStatistics = null;
 
-    columnIndexBuilder = props == null || props.isStatisticsEnabled(descriptor)
+    columnIndexBuilder = currentKeepStatistics
       ? ColumnIndexBuilder.getBuilder(currentChunkType, columnIndexTruncateLength)
       : ColumnIndexBuilder.getNoOpBuilder();
 
